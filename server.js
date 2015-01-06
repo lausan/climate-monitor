@@ -1,7 +1,8 @@
 var net = require('net');
 var http = require('http');
 
-var current;
+var Datastore = require('nedb');
+var db = new Datastore(__dirname + 'data/climate.db');
 
 net.createServer(function(socket) {
 
@@ -12,9 +13,14 @@ net.createServer(function(socket) {
   });
 
   socket.on('end', function() {
-    current = JSON.parse(data);
-    console.log('received:', current);
-    current.date = new Date();
+    data = JSON.parse(data);
+    console.log('received:', data);
+    data.date = new Date();
+    db.insert(data, function(err) {
+      if (err) {
+        console.log(err);
+      }
+    });
     socket.end();
   });
 
@@ -22,7 +28,14 @@ net.createServer(function(socket) {
 
 http.createServer(function(req, res) {
   if (req.method === 'GET') {
-    console.log('sending:', JSON.stringify(current));
-    res.end(JSON.stringify(current));
+    db.find({}).sort({ date: -1 }).limit(100).exec(function(err, docs) {
+      if (err) {
+        console.log(err);
+        res.writeHead(405);
+        res.end({ error: err });
+        return;
+      }
+      res.end(JSON.stringify(docs));
+    });
   }
 }).listen(5000);
