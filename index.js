@@ -19,10 +19,6 @@ climate.on('ready', function() {
   setImmediate(function loop() {
 
     climate.readTemperature(fahrenheit, function(err, temp) {
-      if (err) {
-        console.log(err);
-        return;
-      }
       climate.readHumidity(function(err, humid) {
         var options = {
           host: host,
@@ -32,11 +28,14 @@ climate.on('ready', function() {
           temp: temp.toFixed(4),
           rh: humid.toFixed(4)
         };
-        console.log(payload);
-        console.log(JSON.stringify(payload));
+        debug && console.log(payload);
+        debug && console.log(JSON.stringify(payload));
         var client = net.connect(options, function() {
           client.write(JSON.stringify(payload));
           client.end();
+          setTimeout(loop, interval);
+        });
+        client.on('error', function() {
           setTimeout(loop, interval);
         });
       });
