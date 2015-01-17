@@ -19,7 +19,15 @@ climate.on('ready', function() {
   setImmediate(function loop() {
 
     climate.readTemperature(fahrenheit, function(err, temp) {
+      if (err) {
+        setTimeout(loop, interval);
+        return;
+      }
       climate.readHumidity(function(err, humid) {
+        if (err) {
+          setTimeout(loop, interval);
+          return;
+        }
         var options = {
           host: host,
           port: port
